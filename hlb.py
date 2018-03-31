@@ -3,7 +3,7 @@
 Backup script using hardlinks to save space
 """
 
-from os import listdir, link
+from os import listdir, link, walk
 from shutil import copy
 from os.path import isfile, join as join_path
 from hashlib import sha256
@@ -29,17 +29,34 @@ def hash_file(path):
 
     return hash_ob.hexdigest()
 
-def hash_dir(path):
+def hash_dir(path, full_path=False):
     """
     Hash all files in a directory
     """
     dir_hashs = {}
 
-    for file_path in listdir(path):
-        if not isfile(join_path(path, file_path)):
+    for file_name in listdir(path):
+        relative_path = join_path(path, file_name)
+
+        if not isfile(relative_path):
             continue
 
-        file_hash = hash_file(join_path(path, file_path))
+        file_hash = hash_file(relative_path)
+
+        if file_hash not in dir_hashs:
+            dir_hashs[file_hash] = []
+
+        dir_hashs[file_hash].append(relative_path if full_path else file_name)
+
+    return dir_hashs
+
+def hash_tree(path):
+    """
+    Hash all files in a directory tree
+    """
+    dir_hashs = {}
+    for file_path in recursive_files(path):
+        file_hash = hash_file(file_path)
 
         if file_hash not in dir_hashs:
             dir_hashs[file_hash] = []
@@ -47,6 +64,18 @@ def hash_dir(path):
         dir_hashs[file_hash].append(file_path)
 
     return dir_hashs
+
+def recursive_files(path):
+    """
+    Recursivly return a list of all files
+    """
+    full_path_files = []
+
+    for dir_path, dirs, file_names in walk(path):
+        for file_name in file_names:
+            full_path_files.append(join_path(dir_path, file_name))
+
+    return full_path_files
 
 def dict_intersect(*dicts):
     """
@@ -102,6 +131,29 @@ def snapshot_dir(backup_previous, backup_reference, backup_gen):
     for key, value in hash_old.items():
         print(f"{key[:16]}: {value} -> null")
 
+def snapshot_tree(backup_previous, backup_reference, backup_gen):
+    hash_old = hash_tree(backup_previous)
+    hash_new = hash_tree(backup_reference)
+
+    for key, value in dict_intersect(hash_old, hash_new).items():
+        print(f"{key[:16]}: {value[0]} -> {value[1]}")
+
+        for file_path in value[1]:
+            pass
+
+        hash_old.pop(key)
+        hash_new.pop(key)
+
+    for key, value in hash_new.items():
+        print(f"{key[:16]}: null -> {value}")
+
+        for file_name in value:
+            pass
+
+    for key, value in hash_old.items():
+        print(f"{key[:16]}: {value} -> null")
+
+
 if __name__ == "__main__":
     # Where all the new files will be place
     backup_gen = "backups/"
@@ -112,4 +164,4 @@ if __name__ == "__main__":
     # The working version of the files
     backup_reference = "t/2"
 
-    snapshot_dir(backup_previous, backup_reference, backup_gen)
+    snapshot_tree(backup_previous, backup_reference, backup_gen)
