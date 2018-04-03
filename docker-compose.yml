@@ -5,3 +5,8 @@ services:
         hostname: backup_write
         volumes:
             - /var/lib/backupd:/var/lib/backupd
+    backup_read:
+        build: ./backup_read/
+        hostname: backup_read
+        volumes:
+            - /var/lib/backupd:/home/reader/Backups:ro
