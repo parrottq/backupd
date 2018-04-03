@@ -3,9 +3,9 @@
 Backup script using hardlinks to save space
 """
 
-from os import listdir, link, walk
+from os import listdir, link, walk, makedirs
 from shutil import copy
-from os.path import isfile, isdir, join as join_path
+from os.path import exists, isfile, isdir, join as join_path
 from hashlib import sha256
 
 
@@ -93,6 +93,11 @@ def dict_intersect(*dicts):
 
     return dict_intersected
 
+def make_parent_dir(path):
+    parent_dir = '/'.join(path.split("/")[:-1])
+    if not exists(path):
+        makedirs(parent_dir, exist_ok=True)
+
 def snapshot_dir(backup_previous, backup_reference, backup_gen):
     """
     Generate a snapshot based of a previous snapshot and the current files
@@ -139,7 +144,10 @@ def snapshot_tree(backup_previous, backup_reference, backup_gen):
         print(f"{key[:16]}: {value[0]} -> {value[1]}")
 
         for file_path in value[1]:
-            pass
+            dest = file_path.replace(backup_reference, backup_gen, 1)
+            make_parent_dir(dest)
+            link(value[0][0], dest)
+            #link(value[0][0], file_path)
 
         hash_old.pop(key)
         hash_new.pop(key)
@@ -148,7 +156,10 @@ def snapshot_tree(backup_previous, backup_reference, backup_gen):
         print(f"{key[:16]}: null -> {value}")
 
         for file_name in value:
-            pass
+            dest = file_name.replace(backup_reference, backup_gen, 1)
+            make_parent_dir(dest)
+            copy(file_name, dest)
+            #copy(file_name, file_name)
 
     for key, value in hash_old.items():
         print(f"{key[:16]}: {value} -> null")
@@ -162,6 +173,13 @@ if __name__ == "__main__":
     parser.add_argument("current", help="The working directory")
     parser.add_argument("destination", help="The directory the next snapshot will be generated in")
 
-    for argument, value in parser.parse_args().__dict__.items():
+    arguments = parser.parse_args()
+
+    for argument, value in arguments.__dict__.items():
         if not isdir(value):
             print(f"{argument}: {value} is not a directory")
+            exit()
+
+    snapshot_tree(arguments.previous, arguments.current, arguments.destination)
+
+
