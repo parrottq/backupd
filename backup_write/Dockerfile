@@ -1,0 +1,21 @@
+FROM python:3.7-rc-alpine3.7
+
+RUN apk update
+RUN apk add rsync
+RUN apk add openssh
+RUN ln -s /usr/local/bin/python /bin/python
+
+COPY howto /etc/motd
+
+COPY ./ssh /etc/ssh
+RUN adduser -D writer && passwd -u writer
+COPY authorized_keys /home/writer/.ssh/authorized_keys
+
+COPY hlb.py /bin/hlb
+RUN chmod +x /bin/hlb
+
+COPY backup.py /bin/backup
+RUN chmod +x /bin/backup
+
+EXPOSE 22
+CMD ["/usr/sbin/sshd", "-D"]

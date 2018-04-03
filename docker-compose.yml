@@ -1,0 +1,7 @@
+version: "3"
+services:
+    backup_write:
+        build: ./backup_write/
+        hostname: backup_write
+        volumes:
+            - /var/lib/backupd:/var/lib/backupd

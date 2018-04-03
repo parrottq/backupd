@@ -5,7 +5,7 @@ Backup script using hardlinks to save space
 
 from os import listdir, link, walk
 from shutil import copy
-from os.path import isfile, join as join_path
+from os.path import isfile, isdir, join as join_path
 from hashlib import sha256
 
 
@@ -155,13 +155,13 @@ def snapshot_tree(backup_previous, backup_reference, backup_gen):
 
 
 if __name__ == "__main__":
-    # Where all the new files will be place
-    backup_gen = "backups/"
+    from argparse import ArgumentParser
 
-    # The last backup to compare against
-    backup_previous = "t/1"
+    parser = ArgumentParser(description="Snapshot a directory.")
+    parser.add_argument("previous", help="The previous snapshot")
+    parser.add_argument("current", help="The working directory")
+    parser.add_argument("destination", help="The directory the next snapshot will be generated in")
 
-    # The working version of the files
-    backup_reference = "t/2"
-
-    snapshot_tree(backup_previous, backup_reference, backup_gen)
+    for argument, value in parser.parse_args().__dict__.items():
+        if not isdir(value):
+            print(f"{argument}: {value} is not a directory")
