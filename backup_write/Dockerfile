@@ -5,17 +5,17 @@ RUN apk add rsync
 RUN apk add openssh
 RUN ln -s /usr/local/bin/python /bin/python
 
-COPY howto /etc/motd
-
-COPY ./ssh /etc/ssh
 RUN adduser -D writer && passwd -u writer
-COPY authorized_keys /home/writer/.ssh/authorized_keys
+COPY howto /etc/motd
 
 COPY hlb.py /bin/hlb
 RUN chmod +x /bin/hlb
 
 COPY backup.py /bin/backup
 RUN chmod +x /bin/backup
+
+COPY restore.py /bin/restore
+RUN chmod +x /bin/restore
 
 EXPOSE 22
 CMD ["/usr/sbin/sshd", "-D"]

@@ -1,5 +1,7 @@
 Backup write
 
+To restore the previous backup run: restore
+
 Place all backup files into ~/Backup/
 Then to create a snapshot run: backup
 

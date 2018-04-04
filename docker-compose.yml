@@ -4,9 +4,13 @@ services:
         build: ./backup_write/
         hostname: backup_write
         volumes:
-            - /var/lib/backupd:/var/lib/backupd
+            - /var/lib/backupd/snapshots:/var/lib/backupd/snapshots
+            - /var/lib/backupd/authorized_writers:/home/writer/.ssh/authorized_keys:ro
+            - /var/lib/backupd/ssh:/etc/ssh:ro
     backup_read:
         build: ./backup_read/
         hostname: backup_read
         volumes:
-            - /var/lib/backupd:/home/reader/Backups:ro
+            - /var/lib/backupd/snapshots:/home/reader/Backups:ro
+            - /var/lib/backupd/authorized_readers:/home/reader/.ssh/authorized_keys:ro
+            - /var/lib/backupd/ssh:/etc/ssh:ro

@@ -3,7 +3,8 @@ from subprocess import call
 from datetime import datetime
 from os import listdir, mkdir
 
-dest = "/var/lib/backupd/"
+
+dest = "/var/lib/backupd/snapshots/"
 blank_time = "0000-00-00T00:00:00.0"
 
 def backup():
@@ -11,7 +12,7 @@ def backup():
         previous_snapshot = sorted(listdir(dest))[-1]
     except IndexError:
         # IndexError is no previous snapshot
-        mkdir(f"/var/lib/backupd/{blank_time}")
+        mkdir(f"{dest}{blank_time}")
         previous_snapshot = blank_time
 
     # Prepare the next snapshot directory
