@@ -1,9 +1,6 @@
 #!/bin/sh
 
-mkdir -p backup_write/ssh
+mkdir -p /var/lib/backupd/ssh
 
-ssh-keygen -f backup_write/ssh/ssh_host_rsa_key -N "" -b 4096 -t rsa
-ssh-keygen -f backup_write/ssh/ssh_host_ed25519_key -N "" -t ed25519
-
-ssh-keygen -f backup_read/ssh/ssh_host_rsa_key -N "" -b 4096 -t rsa
-ssh-keygen -f backup_read/ssh/ssh_host_ed25519_key -N "" -t ed25519
+ssh-keygen -f /var/lib/backupd/ssh/ssh_host_rsa_key -N "" -b 4096 -t rsa
+ssh-keygen -f /var/lib/backupd/ssh/ssh_host_ed25519_key -N "" -t ed25519
