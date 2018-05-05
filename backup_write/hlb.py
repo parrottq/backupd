@@ -8,6 +8,7 @@ from shutil import copy
 from os.path import exists, isfile, isdir, join as join_path
 from hashlib import sha256
 from multiprocessing import Pool
+from subprocess import run, PIPE
 
 colours = {
         "reset": "\x1b[0m",
@@ -19,21 +20,8 @@ def hash_file(path):
     """
     Produce a sha256 hash of a file
     """
-    hash_ob = sha256()
 
-    # This should be a multiple of the block sizes
-    hash_update_size = hash_ob.block_size * 1024
-
-    # Doing hashing in increments saves memory
-    with open(path, 'rb') as file_ob:
-        while True:
-            file_seg = file_ob.read(hash_update_size)
-            if not file_seg:
-                break
-
-            hash_ob.update(file_seg)
-
-    return hash_ob.hexdigest()
+    return run(["sha256sum", path], stdout=PIPE).stdout.decode().split(" ")[0]
 
 def hash_dir(path, full_path=False):
     """
