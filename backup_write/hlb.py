@@ -7,6 +7,12 @@ from os import listdir, link, walk, makedirs
 from shutil import copy
 from os.path import exists, isfile, isdir, join as join_path
 from hashlib import sha256
+from multiprocessing import Pool
+
+colours = {
+        "reset": "\x1b[0m",
+        "green": "\x1b[32m"
+    }
 
 
 def hash_file(path):
@@ -50,18 +56,32 @@ def hash_dir(path, full_path=False):
 
     return dir_hashs
 
+def _hash_file(path):
+    """
+    Hash a file while also returning the path
+    """
+    # The path needs to be returned because hashs do not always finish sequentially
+    return (path, hash_file(path))
+
 def hash_tree(path):
     """
     Hash all files in a directory tree
     """
+    file_list = recursive_files(path)
+    file_count = 0
+
     dir_hashs = {}
-    for file_path in recursive_files(path):
-        file_hash = hash_file(file_path)
+    with Pool(processes=8) as pool:
+        for file_path, file_hash in pool.imap_unordered(_hash_file, file_list):
+            file_count += 1
+            print(f"({file_count}/{len(file_list)}) {file_path}")
 
-        if file_hash not in dir_hashs:
-            dir_hashs[file_hash] = []
+            # Create an entry for this hash if it does not already exist
+            if file_hash not in dir_hashs:
+                dir_hashs[file_hash] = []
 
-        dir_hashs[file_hash].append(file_path)
+            # Add the file to the hash list
+            dir_hashs[file_hash].append(file_path)
 
     return dir_hashs
 
@@ -136,33 +156,49 @@ def snapshot_dir(backup_previous, backup_reference, backup_gen):
     for key, value in hash_old.items():
         print(f"{key[:16]}: {value} -> null")
 
+def colour_text(text):
+    return colours["green"] + text + colours["reset"]
+
 def snapshot_tree(backup_previous, backup_reference, backup_gen):
+
+    print("Hashing previous files...")
     hash_old = hash_tree(backup_previous)
+    print("Hashing current files...")
     hash_new = hash_tree(backup_reference)
 
+    print()
+
     for key, value in dict_intersect(hash_old, hash_new).items():
-        print(f"{key[:16]}: {value[0]} -> {value[1]}")
+        print(colour_text(key[:16])+":")
+        for dest in value[0]:
+            print(f"<- {dest}")
+        for dest in value[1]:
+            print(f"-> {dest}")
 
         for file_path in value[1]:
             dest = file_path.replace(backup_reference, backup_gen, 1)
             make_parent_dir(dest)
             link(value[0][0], dest)
-            #link(value[0][0], file_path)
 
         hash_old.pop(key)
         hash_new.pop(key)
 
     for key, value in hash_new.items():
-        print(f"{key[:16]}: null -> {value}")
+        print(colour_text(key[:16])+":")
+        print("<- null")
+        for dest in value:
+            print(f"-> {dest}")
 
         for file_name in value:
             dest = file_name.replace(backup_reference, backup_gen, 1)
             make_parent_dir(dest)
             copy(file_name, dest)
-            #copy(file_name, file_name)
 
     for key, value in hash_old.items():
-        print(f"{key[:16]}: {value} -> null")
+        print(colour_text(key[:16])+":")
+        for dest in value:
+            print(f"<- {dest}")
+        print("-> null")
 
 
 if __name__ == "__main__":
